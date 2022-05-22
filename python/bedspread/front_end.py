@@ -4,23 +4,6 @@ import json
 from boozetools.support import runtime, interfaces
 from bedspread import syntax
 
-def _refresh_grammar():
-	import os
-	from boozetools.macroparse.compiler import compile_file
-	
-	if resources.is_resource("bedspread", "grammar.md"):
-		with resources.path("bedspread", "grammar.md") as src:
-			with resources.path("bedspread", "grammar.automaton") as dst:
-				if (not os.path.exists(dst)) or (os.stat(dst).st_mtime < os.stat(src).st_mtime):
-					with open(dst, 'w') as ofh:
-						json.dump(
-							compile_file(src, method='LR1'),
-							ofh,
-							separators=(',', ':'),
-							sort_keys=True,
-						)
-
-
 class Parser(runtime.TypicalApplication):
 	RESERVED = {
 		'AND' : syntax.Logical,
@@ -28,26 +11,24 @@ class Parser(runtime.TypicalApplication):
 		'XOR' : syntax.Logical,
 		'EQV' : syntax.Logical,
 		'IMP' : syntax.Logical,
+		'NOT' : syntax.Operator,
 		'AS': syntax.Operator,
 		'WHEN': syntax.Operator,
 		'THEN': syntax.Operator,
 		'ELSE': syntax.Operator,
 	}
-	
+	__confusing_token : syntax.Syntax = None
 	def __init__(self):
 		super().__init__(json.loads(resources.read_binary("bedspread", "grammar.automaton")))
-		
-	def scan_ignore(self, yy: interfaces.Scanner, what_to_ignore): pass
 	
+	def scan_ignore(self, yy: interfaces.Scanner, what_to_ignore): pass
 	def scan_punctuation(self, yy: interfaces.Scanner): syntax.Operator(yy, sys.intern(yy.matched_text()))
 	
-	scan_relop = syntax.RelOp
-	
 	def scan_real(self, yy: interfaces.Scanner): syntax.Literal(yy, float)
-	
-	def scan_imaginary(self, yy: interfaces.Scanner): syntax.Literal(yy, lambda t :float(t[:- 1 *1j]))
-	
+	def scan_imaginary(self, yy: interfaces.Scanner): syntax.Literal(yy, lambda t :float(t[:-1])*1j)
 	def scan_hexadecimal(self, yy: interfaces.Scanner): syntax.Literal(yy, lambda t :int(yy.matched_text(), 16))
+	
+	scan_relop = syntax.RelOp
 	
 	def scan_word(self, yy: interfaces.Scanner):
 		upper = yy.matched_text().upper()
@@ -60,16 +41,41 @@ class Parser(runtime.TypicalApplication):
 		text = yy.matched_text()
 		yy.token(kind, text)
 	
-	parse_arithmetic = syntax.Arithmetic
-	parse_relation = syntax.Relation
+	parse_binary_operation = syntax.BinEx
 	parse_case = syntax.Case
 	parse_switch = syntax.Switch
+	parse_unary = syntax.Unary
 	parse_error = syntax.Error
+	parse_apply = syntax.Apply
+	parse_abstraction = syntax.Abstract
+	parse_bind = syntax.Bind
+	parse_parenthetical = syntax.Parenthetical
+	parse_block = syntax.Block
 	
-	def parse_first_case(self, case:syntax.Case):
-		return [case]
+	def parse_broken_apply(self, abstraction, argument):
+		return syntax.Apply(abstraction, syntax.Error(argument))
 	
-	def parse_another_case(self, cases:list[syntax.Case], case:syntax.Case):
-		cases.append(case)
-		return cases
+	def parse_first(self, item:syntax.Syntax):
+		return [item]
 	
+	def parse_another(self, some:list[syntax.Syntax], another:syntax.Syntax):
+		some.append(another)
+		return some
+	
+	def parse_two_names(self, alpha, bravo):
+		return [alpha, bravo]
+	
+	def unexpected_token(self, symbol, semantic, pds):
+		self.__confusing_token = semantic
+	
+	def unexpected_eof(self, pds):
+		self.__confusing_token = syntax.Noise(self.yy.current_span())
+		
+	def unexpected_character(self, yy: interfaces.Scanner):
+		yy.token("NOISE", syntax.Noise(yy.current_span()))
+		
+	def will_recover(self, proposal):
+		""" return an error token corresponding to the  """
+		left = self.__confusing_token
+		right = proposal[0][1] or syntax.Noise(self.yy.current_span())
+		return syntax.Noise(syntax.interval(left, right))

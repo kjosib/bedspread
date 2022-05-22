@@ -18,7 +18,7 @@ Precedence rules are fairly normal.
 
 The so-called "void" symbols are but syntactic particles devoid of independent semantic value.
 ```
-%void '(' ')' '[' ']' '{' '}' ',' '\' ';' WHEN THEN ELSE
+%void '(' ')' '[' ']' '{' '}' ',' '\' ':' ';' WHEN THEN ELSE
 ```
 
 
@@ -33,39 +33,40 @@ start -> exp
   | $error$ :error
 
 exp -> '(' exp ')'   :parenthetical
-  | exp '(' exp ')'  :apply_one
-  | exp '(' kwargs ')'     :apply_many
-  | exp '(' kwargs ',' ')' :apply_many
+  | exp '(' argument ')'  :apply
   | exp '(' $error$ ')' :broken_apply
-  | exp '+' exp   :arithmetic
-  | exp '-' exp   :arithmetic
-  | exp '*' exp   :arithmetic
-  | exp '/' exp   :arithmetic
-  | exp '^' exp   :arithmetic
-  |     '-' exp   :negative  %prec UMINUS
-  | exp RELOP exp :relation
-  |       NOT exp :not
-  | exp LOGIC exp :logic
+  |     '-' exp   :unary  %prec UMINUS
+  | exp '^' exp   :binary_operation
+  | exp '*' exp   :binary_operation
+  | exp '/' exp   :binary_operation
+  | exp '+' exp   :binary_operation
+  | exp '-' exp   :binary_operation
+  | exp RELOP exp :binary_operation
+  |       NOT exp :unary
+  | exp LOGIC exp :binary_operation
   | NAME
   | LITERAL
   | block
-  | '\' NAME block    :abstract_one
-  | '\' params block  :abstract_many
+  | '\' parameter block    :abstraction
   | '\' $error$ block :error
   | '(' $error$ ')' :error
   | '[' $error$ ']' :error
   | '{' $error$ '}' :error
   
+argument -> exp | kwargs | kwargs ','
+parameter -> NAME | params
 
-kwargs -> NAME ':' exp       :first_kwarg
-  | kwargs ',' NAME ':' exp  :subsequent_kwarg
+kwargs -> binding       :first
+  | kwargs ',' binding  :another
+
+binding -> NAME ':' exp :bind
 
 params -> NAME ',' NAME  :two_names
-  | params ',' NAME      :another_name
+  | params ',' NAME      :another
 
 block -> '[' exp ']' :block  | '{' cases otherwise '}' :switch
 
-cases -> case :first_case | cases case :another_case
+cases -> case :first | cases case :another
 case -> WHEN exp THEN exp ';' :case
 otherwise -> ELSE exp
 

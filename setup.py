@@ -1,12 +1,26 @@
 """
 Packaging script for PyPI.
 """
-import setuptools
+import sys, os, os.path, json, setuptools
 
-from bedspread import front_end
-front_end._refresh_grammar()
+home = os.path.dirname(__file__)
+sys.path.insert(0, os.path.join(home, 'python'))
+from bedspread import __version__
 
-exec(open('python/bedspread/version.py').read())
+def _refresh_grammar():
+	folder = os.path.join(home, 'python', 'bedspread')
+	src = os.path.join(folder, "grammar.md")
+	dst = os.path.join(folder, "grammar.automaton")
+	if os.path.exists(src):
+		if (not os.path.exists(dst)) or (os.stat(dst).st_mtime < os.stat(src).st_mtime):
+			from boozetools.macroparse.compiler import compile_file
+			tables = compile_file(src, method='LR1')
+			with open(dst, 'w') as ofh:
+				json.dump(tables, ofh, separators=(',', ':'), sort_keys=True)
+	else:
+		assert os.path.exists(dst)
+	
+_refresh_grammar()
 
 setuptools.setup(
 	name='bedspread',
@@ -37,6 +51,6 @@ setuptools.setup(
     ],
 	python_requires='>=3.7',
 	install_requires=[
-		'booze-tools>=0.5.1',
+		'booze-tools>=0.5.2',
 	]
 )

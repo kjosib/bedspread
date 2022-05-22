@@ -16,8 +16,9 @@ def display(aTree):
 def usage():
 	print("Bed Spread (version %s), interactive REPL"% __version__)
 	print("    Documentation is at http://bedspread.readthedocs.io")
+	print("    Follow progress at https://github.com/kjosib/bedspread")
 	print("    This is pre-alpha code. Current goal is to pretty-print ASTs corresponding to expressions.")
-	print("    ctrl-d or ctrl-z to quit, depending on operating system")
+	print("    ctrl-d or ctrl-z to quit, depending on your operating system")
 
 def consoleLoop():
 	# Read/Parse/Print Loop
@@ -30,4 +31,5 @@ def consoleLoop():
 	
 
 if __name__ == '__main__':
+	usage()
 	consoleLoop()

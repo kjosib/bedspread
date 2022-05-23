@@ -47,7 +47,8 @@ Note: *UDF* here stands for *User-Defined Function*.
 
 ## Documentation:
 
-Documentation will be hosted on readthedocs.io. A first-draft list of headings is:
+Documentation is [at readthedocs](https://bedspread.readthedocs.io/en/latest/).
+A first-draft list of headings is:
 
 * Starting with *Bed Spread*: How to open the REPL and play
 * The *Bed Spread* expression grammar

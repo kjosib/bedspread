@@ -36,7 +36,7 @@ setuptools.setup(
 	description='Bed Spread: an Expression-Oriented Code-in-Database System',
 	long_description=open('README.md').read(),
 	long_description_content_type="text/markdown",
-	url="https://github.com/kjosib/mistake",
+	url="https://github.com/kjosib/bedspread",
 	classifiers=[
 		"Programming Language :: Python :: 3",
 		"License :: OSI Approved :: MIT License",

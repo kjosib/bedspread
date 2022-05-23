@@ -10,7 +10,7 @@ class Parser(runtime.TypicalApplication):
 		'OR' : syntax.Logical,
 		'XOR' : syntax.Logical,
 		'EQV' : syntax.Logical,
-		'IMP' : syntax.Logical,
+		'MOD' : syntax.Operator,
 		'NOT' : syntax.Operator,
 		'AS': syntax.Operator,
 		'WHEN': syntax.Operator,
@@ -47,23 +47,48 @@ class Parser(runtime.TypicalApplication):
 	parse_unary = syntax.Unary
 	parse_error = syntax.Error
 	parse_apply = syntax.Apply
-	parse_abstraction = syntax.Abstract
-	parse_bind = syntax.Bind
+	parse_bind = syntax.Binding
 	parse_parenthetical = syntax.Parenthetical
 	parse_block = syntax.Block
+	
+	def parse_abstraction(self, parameter, body):
+		if isinstance(parameter, syntax.Error): return parameter
+		elif isinstance(body, syntax.Error): return body
+		else: return syntax.Abstraction(parameter, body)
 	
 	def parse_broken_apply(self, abstraction, argument):
 		return syntax.Apply(abstraction, syntax.Error(argument))
 	
-	def parse_first(self, item:syntax.Syntax):
+	def parse_first_binding(self, binding:syntax.Binding):
+		return {binding.name.text:binding}
+	
+	def parse_another_binding(self, some:dict[str:syntax.Binding], another:syntax.Binding):
+		name = another.name.text
+		if name in some:
+			return syntax.Error(name, "already used earlier")
+		else:
+			some[name] = another
+			return some
+	
+	def parse_first_case(self, item:syntax.Case):
 		return [item]
 	
-	def parse_another(self, some:list[syntax.Syntax], another:syntax.Syntax):
+	def parse_another_case(self, some:list[syntax.Case], another:syntax.Case):
 		some.append(another)
 		return some
 	
-	def parse_two_names(self, alpha, bravo):
-		return [alpha, bravo]
+	def parse_two_params(self, alpha:syntax.Name, bravo:syntax.Name):
+		a, b = alpha.text, bravo.text
+		if a == b: return syntax.Error(bravo, "already used earlier")
+		else: return {a:alpha, b:bravo}
+	
+	def parse_another_param(self, some: dict[str: syntax.Name], another: syntax.Name):
+		name = another.text
+		if name in some:
+			return syntax.Error(another, "already used earlier")
+		else:
+			some[name] = another
+			return some
 	
 	def unexpected_token(self, symbol, semantic, pds):
 		self.__confusing_token = semantic

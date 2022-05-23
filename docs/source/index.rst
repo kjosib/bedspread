@@ -1,7 +1,5 @@
 .. Bed Spread documentation master file, created by
    sphinx-quickstart on Sun May 15 04:35:18 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
 Bed Spread: an Expression-Oriented Code-in-Database System
 ==========================================================
@@ -11,11 +9,10 @@ as a richly semantic interaction with a deeply structured and assistive database
 Also, it's still pre-alpha. Current goal is a text-console-hosted evaluator spike by June,
 then a graphical shell by July.
 
-.. warning:: **Bed Spread** is still being invented. Documentation may therefore get out ahead of reality.
+.. note:: **Bed Spread** is still being invented. Things *will* change, but I'll try to keep the documentation up to date.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    about
    quickstart
@@ -32,9 +29,7 @@ then a graphical shell by July.
    ffi
    hacking
 
-
-You can read the `the quasi-academic paper <https://kjosib.github.io/Contrib/Bed%20Spread.html>`_
-or visit the `github page <https://github.com/kjosib/bedspread>`_.
+You can also visit the `github page <https://github.com/kjosib/bedspread>`_ if you'd like to follow development.
 
 Indices and tables
 ==================

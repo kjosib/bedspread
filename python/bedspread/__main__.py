@@ -2,16 +2,12 @@
 For the moment, just a read-parse-print loop.
 
 """
-import os
-from bedspread import __version__, syntax, front_end
+from bedspread import __version__, front_end, evaluator
 
 def promptedInput():
 	# Prompt for some input:
 	return input("Ready >> ")
 
-def display(aTree):
-	# Eventually walk an AST and pretty-print the result.
-	print(aTree)
 
 def usage():
 	print("Bed Spread (version %s), interactive REPL"% __version__)
@@ -22,11 +18,16 @@ def usage():
 
 def consoleLoop():
 	# Read/Parse/Print Loop
-	parse = front_end.Parser().parse
+	parser = front_end.Parser()
 	while True:
 		try: text = promptedInput()
 		except EOFError: break
-		if text: display(parse(text))
+		if text:
+			tree = parser.parse(text)
+			value = evaluator.evaluate(tree)
+			if isinstance(value, evaluator.Error):
+				parser.source.complain(*value.exp.span())
+			print(value)
 		else: usage()
 	
 

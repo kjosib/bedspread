@@ -1,6 +1,5 @@
 import unittest
 from bedspread import front_end, syntax
-from importlib import resources
 
 
 class Test_Parser(unittest.TestCase):
@@ -59,24 +58,24 @@ class Test_Parser(unittest.TestCase):
 	def test_apply_one(self):
 		tree = self.parse("Fahrenheit(451)")
 		self.assertIsInstance(tree, syntax.Apply)
-		self.assertIsInstance(tree.abstraction, syntax.Name)
-		self.assertEqual(tree.abstraction.text, 'Fahrenheit')
+		self.assertIsInstance(tree.function, syntax.Name)
+		self.assertEqual(tree.function.text, 'Fahrenheit')
 		self.assertIsInstance(tree.argument, syntax.Literal)
 		self.assertEqual(tree.argument.value, 451)
 
 	def test_apply_chain(self):
 		tree = self.parse("a(1)(2)(b)")
 		self.assertEqual(tree.argument.text, 'b')
-		self.assertEqual(tree.abstraction.argument.value, 2)
-		self.assertEqual(tree.abstraction.abstraction.argument.value, 1)
-		self.assertEqual(tree.abstraction.abstraction.abstraction.text, 'a')
+		self.assertEqual(tree.function.argument.value, 2)
+		self.assertEqual(tree.function.function.argument.value, 1)
+		self.assertEqual(tree.function.function.function.text, 'a')
 
 	def test_apply_two(self):
 		tree = self.parse("point(x:3, y:5)")
 		self.assertIsInstance(tree, syntax.Apply)
-		self.assertIsInstance(tree.argument, list)
-		assert tree.argument
-		assert all(isinstance(node, syntax.Bind) for node in tree.argument)
+		self.assertIsInstance(tree.argument, dict)
+		self.assertEqual({'x', 'y'}, tree.argument.keys())
+		assert all(isinstance(node, syntax.Binding) for node in tree.argument.values())
 		
 	def test_double(self):
 		tree = self.parse(r"\x[x+x](5)")

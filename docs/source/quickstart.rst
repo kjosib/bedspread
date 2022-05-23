@@ -2,7 +2,7 @@ Getting Started: How to open the REPL and play
 ===============================================
 
 Install (or Upgrade)
-----------
+--------------------
 
 To install **Bed Spread**, you must first have `Python. <https://www.python.org/>`_
 Then, at a console prompt, type::
@@ -64,4 +64,4 @@ The main differences are:
 
 **For the technically minded:**
 *Bed Spread* aims to be a relatively pure functional language with lazy evaluation.
-
+At this very moment, evaluation is strict, but that will change in time.

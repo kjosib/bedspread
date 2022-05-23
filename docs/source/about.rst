@@ -35,21 +35,3 @@ Current Status
 
 .. _roadmap:
 
-Development Roadmap
---------------------
-
-Note: *UDF* here stands for *User-Defined Function*.
-
-* [x] Decide on host language for initial development (presumably Python)
-* [x] Hack together a typical math-like functional expression grammar with a right-associative selection form.
-* [x] Console-hosted read-parse-display loop
-* [ ] Console-hosted read-eval-print loop (REPL) without UDFs, but with intrinsics for the basics.
-* [ ] Minimal database schema for UDFs, and a few simple samples.
-* [ ] Adjust REPL to pull UDFs from a database. (Abstract over DB access to isolate the concern.)
-* [ ] Add Lazy Evaluation.
-* [ ] Add Turtle Graphics. This may be cause to do something about monads, or at least add a semicolon.
-* [ ] Minimal graphical shell: a console, a function index with search facility, and a clause editor.
-* [ ] Add algebraic types, first to the schema, then the grammar, then
-* [ ] Do something about monads. This may involve
-* [ ] Add schema and REPL support for access to foreign function interface.
-

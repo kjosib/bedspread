@@ -9,7 +9,7 @@ Precedence rules are fairly normal.
 %bogus UMINUS
 %left '('
 %right '^'
-%left '*' '/'
+%left '*' '/' MOD
 %left '+' '-'
 %left RELOP
 %left NOT
@@ -32,23 +32,23 @@ Functions of several arguments are all keyword-only.
 start -> exp
   | $error$ :error
 
-exp -> '(' exp ')'   :parenthetical
+exp -> grouping
+  | LITERAL
+  | NAME
   | exp '(' argument ')'  :apply
   | exp '(' $error$ ')' :broken_apply
   |     '-' exp   :unary  %prec UMINUS
   | exp '^' exp   :binary_operation
   | exp '*' exp   :binary_operation
   | exp '/' exp   :binary_operation
+  | exp MOD exp   :binary_operation
   | exp '+' exp   :binary_operation
   | exp '-' exp   :binary_operation
   | exp RELOP exp :binary_operation
   |       NOT exp :unary
   | exp LOGIC exp :binary_operation
-  | NAME
-  | LITERAL
-  | block
-  | '\' parameter block    :abstraction
-  | '\' $error$ block :error
+  | '\' parameter grouping    :abstraction
+  | '\' $error$ grouping :error
   | '(' $error$ ')' :error
   | '[' $error$ ']' :error
   | '{' $error$ '}' :error
@@ -56,17 +56,19 @@ exp -> '(' exp ')'   :parenthetical
 argument -> exp | kwargs | kwargs ','
 parameter -> NAME | params
 
-kwargs -> binding       :first
-  | kwargs ',' binding  :another
+kwargs -> binding       :first_binding
+  | kwargs ',' binding  :another_binding
 
 binding -> NAME ':' exp :bind
 
-params -> NAME ',' NAME  :two_names
-  | params ',' NAME      :another
+params -> NAME ',' NAME  :two_params
+  | params ',' NAME      :another_param
 
-block -> '[' exp ']' :block  | '{' cases otherwise '}' :switch
+grouping -> '(' exp ')'   :parenthetical
+  | '[' exp ']' :block 
+  | '{' cases otherwise '}' :switch
 
-cases -> case :first | cases case :another
+cases -> case :first_case | cases case :another_case
 case -> WHEN exp THEN exp ';' :case
 otherwise -> ELSE exp
 

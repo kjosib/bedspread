@@ -131,8 +131,12 @@ class Case(Expression):
 	def __init__(self, predicate, consequence):
 		self.predicate = predicate
 		self.consequence = consequence
+		
 	def __str__(self):
 		return "WHEN %s THEN %s; "%(self.predicate, self.consequence)
+	
+	def span(self) -> tuple[int, int]:
+		return interval(self.predicate, self.consequence)
 		
 class Switch(Expression):
 	def __init__(self, cases:list[Case], otherwise:Expression):
@@ -144,28 +148,32 @@ class Switch(Expression):
 		return "{%sELSE %s}"%(cases, self.otherwise)
 
 class Apply(Expression):
-	def __init__(self, abstraction:Expression, argument:Expression):
-		self.abstraction = abstraction
+	def __init__(self, function:Expression, argument:Expression):
+		self.function = function
 		self.argument = argument
+		
 	def __str__(self):
-		if isinstance(self.argument, list):
-			arg = ', '.join(map(str, self.argument))
+		if isinstance(self.argument, dict):
+			arg = ', '.join(map(str, self.argument.values()))
 		else:
 			arg = str(self.argument)
-		return str(self.abstraction)+"( " + arg + " )"
+		return str(self.function)+"( " + arg + " )"
+	
+	def span(self) -> tuple[int, int]:
+		return interval(self.function, self.argument)
 
-class Abstract(Expression):
+class Abstraction(Expression):
 	# Just a _syntax_ node.
-	def __init__(self, parameter:Union[Name, list[Name]], body:Expression):
+	def __init__(self, parameter:Union[Name, dict[str,Name]], body:Expression):
 		self.parameter = parameter
 		self.body = body
 		
 	def __str__(self):
-		if isinstance(self.parameter, list): param_string = ', '.join(map(str, self.parameter))
+		if isinstance(self.parameter, dict): param_string = ', '.join(map(str, self.parameter.keys()))
 		else: param_string = str(self.parameter)
 		return "\\"+param_string+" "+str(self.body)
 
-class Bind(Syntax):
+class Binding(Syntax):
 	def __init__(self, name: Name, argument: Expression):
 		self.name = name
 		self.argument = argument
@@ -178,6 +186,9 @@ class Parenthetical(Expression):
 	
 	def __str__(self):
 		return "("+str(self.exp)+")"
+	
+	def span(self) -> tuple[int, int]:
+		return self.exp.span()
 
 class Block(Expression):
 	def __init__(self, exp:Expression):
@@ -185,4 +196,7 @@ class Block(Expression):
 	
 	def __str__(self):
 		return "[" + str(self.exp) + "]"
+
+	def span(self) -> tuple[int, int]:
+		return self.exp.span()
 

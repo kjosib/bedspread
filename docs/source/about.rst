@@ -33,5 +33,3 @@ Current Status
 ---------------
 *Bed Spread* is presently too nascent for serious use, but watch this space.
 
-.. _roadmap:
-

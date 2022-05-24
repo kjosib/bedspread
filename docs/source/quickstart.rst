@@ -45,9 +45,7 @@ you can type in a mathematical expression and get an answer back.::
 
 Nice, eh? Except... What does it even mean?
 
-    This early in the development game, the answer you get back might not make a lot of sense.
-    Things will get better once the evaluator module is built and working.
-    They'll get quite a bit better still as more features come along.
+    Things will get quite a bit better still as more features come along.
 
 Or if **Bed Spread** didn't quite understand what you meant,
 it will point out where it got confused trying to read what you wrote.
@@ -59,7 +57,7 @@ The main differences are:
 * There is syntax for making choices among alternatives.
 * You can create and alter your own functions easily. (Coming soon!)
 * You can access the full capabilities of your computer. (Eventually.)
-* Nothing actually works just yet.
+* Comparatively little actually works just yet.
 
 
 **For the technically minded:**

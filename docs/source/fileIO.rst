@@ -1,7 +1,13 @@
 I/O with Files:
 ===================
 
-This entire section is going to have to wait until there is clear support for data structuring.
+.. admonition:: Invention in Progress. Blue Sky Ahead
+
+    This section is really a glorified place-holder for some future lines of development.
+    It enumerates and categorizes a number of issues that go into dealing with files,
+    but no specific designs (much less solutions) are yet codified.
+
+    The file I/O subsystem may go through several iterations before settling.
 
 Files break down across a few dimensions.
 
@@ -60,5 +66,6 @@ The wild west: Any data anywhere. But for some applications, this turns out to b
 Non-Posix Concepts
 -------------------
 
-Chiefly, I would get rid of the ``seek()`` and ``tell()``interface, or change them considerably.
-
+Chiefly, I would get rid of the ``seek()`` and ``tell()`` interface, or change them considerably.
+In particular, random-access files should treat seeking and read/write as a single atomic operation.
+Or maybe you open a particular-numbered block for read/write. At any rate, there is no tape to wind.

@@ -6,8 +6,8 @@ Bed Spread: an Expression-Oriented Code-in-Database System
 
 *Bed Spread* aims to re-imagine and reshape the act of programming in a high-level computer language
 as a richly semantic interaction with a deeply structured and assistive database of functionality.
-Also, it's still pre-alpha. Current goal is a text-console-hosted evaluator spike by June,
-then a graphical shell by July.
+Also, it's still pre-alpha. A text-console-hosted evaluator works, with four kinds of definitions in a database.
+Next goal is a graphical shell by July.
 
 .. note:: **Bed Spread** is still being invented. Things *will* change, but I'll try to keep the documentation up to date.
 
@@ -20,7 +20,6 @@ then a graphical shell by July.
    intrinsic
    derived
    simpleIO
-   types
    fileIO
    turtle
    games

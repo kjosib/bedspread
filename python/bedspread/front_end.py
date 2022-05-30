@@ -27,6 +27,7 @@ class Parser(runtime.TypicalApplication):
 	def scan_real(self, yy: interfaces.Scanner): syntax.Literal(yy, float)
 	def scan_imaginary(self, yy: interfaces.Scanner): syntax.Literal(yy, lambda t :float(t[:-1])*1j)
 	def scan_hexadecimal(self, yy: interfaces.Scanner): syntax.Literal(yy, lambda t :int(yy.matched_text(), 16))
+	def scan_short_string(self, yy: interfaces.Scanner): syntax.Literal(yy, lambda t: yy.matched_text()[1:-1])
 	
 	scan_relop = syntax.RelOp
 	
@@ -47,9 +48,12 @@ class Parser(runtime.TypicalApplication):
 	parse_unary = syntax.Unary
 	parse_error = syntax.Error
 	parse_apply = syntax.Apply
-	parse_bind = syntax.Binding
+	parse_apply_anaphor = syntax.ApplyAnaphor
+	parse_bind_expression = syntax.BindExpression
+	parse_bind_anaphor = syntax.BindAnaphor
 	parse_parenthetical = syntax.Parenthetical
 	parse_block = syntax.Block
+	parse_field_access = syntax.FieldAccess
 	
 	def parse_abstraction(self, parameter, body):
 		if isinstance(parameter, syntax.Error): return parameter
@@ -59,10 +63,10 @@ class Parser(runtime.TypicalApplication):
 	def parse_broken_apply(self, abstraction, argument):
 		return syntax.Apply(abstraction, syntax.Error(argument))
 	
-	def parse_first_binding(self, binding:syntax.Binding):
+	def parse_first_binding(self, binding:syntax.BindExpression):
 		return {binding.name.text:binding}
 	
-	def parse_another_binding(self, some:dict[str:syntax.Binding], another:syntax.Binding):
+	def parse_another_binding(self, some: dict[str:syntax.BindExpression], another:syntax.BindExpression):
 		name = another.name.text
 		if name in some:
 			return syntax.Error(name, "already used earlier")

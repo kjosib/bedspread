@@ -160,7 +160,20 @@ class Apply(Expression):
 		return str(self.function)+"( " + arg + " )"
 	
 	def span(self) -> tuple[int, int]:
-		return interval(self.function, self.argument)
+		if isinstance(self.argument, dict):
+			return self.function.span()
+		else:
+			return interval(self.function, self.argument)
+	
+class ApplyAnaphor(Expression):
+	def __init__(self, function:Expression):
+		self.function = function
+		
+	def __str__(self):
+		return str(self.function)+'(@)'
+	
+	def span(self) -> tuple[int, int]:
+		return self.function.span()
 
 class Abstraction(Expression):
 	# Just a _syntax_ node.
@@ -173,12 +186,20 @@ class Abstraction(Expression):
 		else: param_string = str(self.parameter)
 		return "\\"+param_string+" "+str(self.body)
 
-class Binding(Syntax):
+class BindExpression(Syntax):
 	def __init__(self, name: Name, argument: Expression):
 		self.name = name
 		self.argument = argument
 	def __str__(self):
 		return str(self.name)+": "+str(self.argument)
+	def span(self) -> tuple[int, int]:
+		return interval(self.name, self.argument)
+
+class BindAnaphor(Syntax):
+	def __init__(self, name: Name):
+		self.name = self.argument = name
+	def __str__(self):
+		return '@'+str(self.name)
 
 class Parenthetical(Expression):
 	def __init__(self, exp:Expression):
@@ -200,3 +221,14 @@ class Block(Expression):
 	def span(self) -> tuple[int, int]:
 		return self.exp.span()
 
+class FieldAccess(Expression):
+	def __init__(self, exp:Expression, name:Name):
+		self.exp = exp
+		self.name = name
+		
+	def __str__(self):
+		return str(self.exp)+"."+str(self.name)
+	
+	def span(self) -> tuple[int, int]:
+		return interval(self.exp, self.name)
+	

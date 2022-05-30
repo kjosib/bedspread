@@ -30,7 +30,7 @@ setuptools.setup(
 	packages=['bedspread', ],
 	package_dir = {'': 'python'},
 	package_data={
-		'bedspread': ['grammar.automaton',],
+		'bedspread': ['grammar.automaton', 'schema.sql'],
 	},
 	license='MIT',
 	description='Bed Spread: an Expression-Oriented Code-in-Database System',

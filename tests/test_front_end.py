@@ -75,7 +75,7 @@ class Test_Parser(unittest.TestCase):
 		self.assertIsInstance(tree, syntax.Apply)
 		self.assertIsInstance(tree.argument, dict)
 		self.assertEqual({'x', 'y'}, tree.argument.keys())
-		assert all(isinstance(node, syntax.Binding) for node in tree.argument.values())
+		assert all(isinstance(node, syntax.BindExpression) for node in tree.argument.values())
 		
 	def test_double(self):
 		tree = self.parse(r"\x[x+x](5)")

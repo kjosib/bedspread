@@ -31,5 +31,5 @@ and the organizational busywork they create.
 
 Current Status
 ---------------
-*Bed Spread* is presently too nascent for serious use, but watch this space.
+*Bed Spread* is presently too nascent for serious use, but watch this space. It's growing.
 

@@ -6,6 +6,7 @@ __pycache__/
 
 # local bits
 *.automaton
+*.bedspread
 .idea/*
 
 # C extensions

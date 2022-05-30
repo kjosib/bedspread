@@ -7,7 +7,7 @@ It started as a copy of the calculator example from booze-tools.
 Precedence rules are fairly normal.
 ```
 %bogus UMINUS
-%left '('
+%left '(' '.'
 %right '^'
 %left '*' '/' MOD
 %left '+' '-'
@@ -18,15 +18,17 @@ Precedence rules are fairly normal.
 
 The so-called "void" symbols are but syntactic particles devoid of independent semantic value.
 ```
-%void '(' ')' '[' ']' '{' '}' ',' '\' ':' ';' WHEN THEN ELSE
+%void '(' ')' '[' ']' '{' '}' ',' '\' ':' ';' '@' '.' WHEN THEN ELSE
 ```
 
 
 ## Productions start
 
-This is mostly an Euler-style expression syntax.
+This is mostly a traditional-style infix expression syntax.
 The one maybe-surprising caveat is there are no literal tuples.
 Functions of several arguments are all keyword-only.
+However, the `@` symbol provides anaphoric abbreviation,
+which should encourage you to use consistent names for parameters.
 
 ```
 start -> exp
@@ -35,7 +37,9 @@ start -> exp
 exp -> grouping
   | LITERAL
   | NAME
+  | exp '.' NAME :field_access
   | exp '(' argument ')'  :apply
+  | exp '(' '@' ')'  :apply_anaphor
   | exp '(' $error$ ')' :broken_apply
   |     '-' exp   :unary  %prec UMINUS
   | exp '^' exp   :binary_operation
@@ -59,10 +63,11 @@ parameter -> NAME | params
 kwargs -> binding       :first_binding
   | kwargs ',' binding  :another_binding
 
-binding -> NAME ':' exp :bind
+binding -> NAME ':' exp :bind_expression
+  | '@' NAME :bind_anaphor
 
-params -> NAME ',' NAME  :two_params
-  | params ',' NAME      :another_param
+params -> NAME NAME  :two_params
+  | params NAME      :another_param
 
 grouping -> '(' exp ')'   :parenthetical
   | '[' exp ']' :block 
@@ -101,6 +106,7 @@ Nothing fancy here, but the observant will note that complex numbers are support
 {real}[iI]         :imaginary
 {sigil}{hex}       :hexadecimal
 {alpha}{word}*     :word
+\"[^"\v]*\"        :short_string
 \s+                :ignore whitespace
 <        :relop LT
 <=       :relop LE

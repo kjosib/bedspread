@@ -12,13 +12,16 @@ class Test_Evaluator(unittest.TestCase):
 	
 	def test_literal(self):
 		self.assertEqual(5, go("5"))
+		self.assertEqual("abc", go('"abc"'))
 		
 	def test_arithmetic(self):
 		self.assertEqual(25, go("3*3+4*4"))
 		self.assertEqual(2, go("35 mod 3"))
+		self.assertEqual("abcdef", go('"abc" + "def"'))
 
 	def test_parens(self):
 		self.assertEqual(12*7, go("3*(3+4)*4"))
+		self.assertEqual(12*7, go("3*[3+4]*4"))
 
 	def test_hypotenuse(self):
 		self.assertIs(True, go("3*3 + 4*4 = 5*5"))
@@ -27,7 +30,7 @@ class Test_Evaluator(unittest.TestCase):
 		self.assertEqual(6.25, go(r"\x[x*x](2.5)"))
 	
 	def test_pythagoras(self):
-		text = r"\a,b[a^2+b^2](a:3,b:4)"
+		text = r"\a b[a^2+b^2](a:3,b:4)"
 		self.assertEqual(25, go(text))
 	
 	def test_cond(self):
@@ -56,6 +59,9 @@ class Test_Evaluator(unittest.TestCase):
 	def test_logcal_ops(self):
 		self.assertIs( True, go('1>2 or not 1>2 and 5<7'))
 		self.assertIs( True, go("1>2 xor 3<4"))
+		
+	def test_field_access(self):
+		self.assertEqual("ABC", go('"abc".upper'))
 
 if __name__ == '__main__':
 	unittest.main()

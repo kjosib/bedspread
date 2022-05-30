@@ -1,7 +1,9 @@
-import inspect
+from collections import ChainMap, namedtuple
 import operator
-from . import syntax
+import inspect
+from . import syntax, __version__
 import math
+from string import Formatter
 
 GLOBAL_SCOPE = {} ## Filled in at the end of the file with (most of) the math module.
 
@@ -29,6 +31,10 @@ PRIMITIVE_UNARY = {
 	"NOT": operator.not_,
 }
 
+class CannotCall(Exception):
+	""" Internal exception meaning the FFI binding did not work. """
+	pass
+
 class Error:
 	""" A kind of value which means there is some error. """
 	def __init__(self, exp:syntax.Syntax, problem:str):
@@ -46,10 +52,16 @@ class Function:
 		""" arg is caller syntax and env is the caller's scope. """
 		raise NotImplementedError(type(self))
 
+	def eval_anaphor(self, tree:syntax.ApplyAnaphor, caller_env):
+		""" tree is caller syntax and env is the caller's scope. """
+		raise NotImplementedError(type(self))
+
 class MultaryFunction(Function):
 	def __init__(self, parameter_names):
 		self.parameter_names = set(parameter_names)
-	
+		bogons = [p for p in self.parameter_names if not p.isidentifier()]
+		if bogons: raise CannotCall(bogons)
+
 	def has_parameter(self, name: str) -> bool:
 		return name in self.parameter_names
 	
@@ -68,11 +80,34 @@ class MultaryFunction(Function):
 				bound[k] = value
 			if free: return PartialFunction(self, bound, free)
 			return self.raw_multi(bound)
+		elif len(self.parameter_names) == 1:
+			value = _eval(arg, caller_env)
+			if isinstance(value, Error): return value
+			else: return self.raw_multi({next(iter(self.parameter_names)):value})
 		else:
 			return self.__bad_call(arg)
 
 	def raw_multi(self, bound:dict[str:object]):
 		raise NotImplementedError(type(self))
+	
+	def eval_anaphor(self, tree:syntax.ApplyAnaphor, caller_env):
+		bound = {}
+		free = set()
+		for p in self.parameter_names:
+			try: bound[p] = caller_env[p]
+			except KeyError: free.add(p)
+		if free and bound: return PartialFunction(self, bound, free)
+		elif bound: return self.raw_multi(bound)
+		else: return self.__bad_call(tree)
+
+class RecordConstructor(MultaryFunction):
+	def __init__(self, name, parameter_names):
+		super().__init__(parameter_names)
+		self.name = name
+		self.type = namedtuple(name, parameter_names)
+	
+	def raw_multi(self, bound:dict[str:object]):
+		return self.type(**bound)
 
 class PartialFunction(MultaryFunction):
 	def __init__(self, basis:MultaryFunction, bound:dict, free:set):
@@ -98,12 +133,16 @@ class UnaryFunction(Function):
 
 	def raw_single(self, value:object):
 		raise NotImplementedError(type(self))
-
+	
 
 class PythonUnary(UnaryFunction):
 	def __init__(self, fn):
 		self.raw_single = fn
-	
+		
+	def eval_anaphor(self, tree:syntax.ApplyAnaphor, caller_env):
+		return Error(tree, "This built-in function takes only one anonymous argument, so the @ here is confusing.")
+
+
 class PythonMultary(MultaryFunction):
 	def __init__(self, fn, params):
 		super().__init__(params)
@@ -112,28 +151,58 @@ class PythonMultary(MultaryFunction):
 	
 	def raw_multi(self, bound:dict[str:object]):
 		return self.__fn(*(bound[k] for k in self.param_order))
+
+class Template(MultaryFunction):
+	__formatter = Formatter()
+	def __init__(self, text):
+		params = [x[1] for x in self.__formatter.parse(text) if x[1]]
+		super().__init__(params)
+		self.text = text
 	
+	def raw_multi(self, bound: dict[str:object]):
+		return self.text.format(**bound)
+
 
 class UDF1(UnaryFunction):
-	def __init__(self, tree:syntax.Abstraction, env):
-		self.parameter = tree.parameter.text
-		self.body = tree.body
+	def __init__(self, parameter, body, env):
+		self.parameter = parameter
+		self.body = body
 		self.lexical_scope = env
 		
 	def raw_single(self, value:object):
-		activation_env = {**self.lexical_scope, self.parameter: value}
+		activation_env = ChainMap({self.parameter: value}, self.lexical_scope)
 		return _eval(self.body, activation_env)
 	
+	def eval_anaphor(self, tree:syntax.ApplyAnaphor, caller_env):
+		try: value = caller_env[self.parameter]
+		except AttributeError: return Error(tree, "This user-defined function's argument is called %r, but there is no such name in the caller's environment."%self.parameter)
+		else: return self.raw_single(value)
+	
 class UDF2(MultaryFunction):
-	def __init__(self, tree: syntax.Abstraction, env):
-		super().__init__(tree.parameter.keys())
-		self.body = tree.body
+	def __init__(self, parameter_names, body:syntax.Syntax, env):
+		super().__init__(parameter_names)
+		self.body = body
 		self.lexical_scope = env
 	
 	def raw_multi(self, bound: dict[str:object]):
-		activation_env = {**self.lexical_scope, **bound}
+		activation_env = ChainMap(bound, self.lexical_scope)
 		return _eval(self.body, activation_env)
+
+
+class SemiConstant:
+	""" i.e. a function with no free parameters. """
+	result:object
 	
+	def __init__(self, tree: syntax.Syntax):
+		self.tree = tree
+		
+	def force(self):
+		# Some measure of memoization: We may presume that a function with no free variables only has one possible meaning.
+		if not hasattr(self, "result"):
+			self.result = _eval(self.tree, GLOBAL_SCOPE)
+		return self.result
+
+
 def evaluate(tree):
 	return _eval(tree, GLOBAL_SCOPE)
 
@@ -147,8 +216,12 @@ def _eval(tree, env):
 	if isinstance(tree, syntax.Literal):
 		return tree.value
 	elif isinstance(tree, syntax.Name):
-		try: return env[tree.text]
+		try: value = env[tree.text]
 		except KeyError: return Error(tree, "No such name in scope.")
+		if isinstance(value, SemiConstant):
+			return value.force()
+		else:
+			return value
 	elif isinstance(tree, syntax.BinEx):
 		lhs = _eval(tree.lhs, env)
 		if isinstance(lhs, Error):
@@ -177,12 +250,12 @@ def _eval(tree, env):
 		elif isinstance(function, Function):
 			try: return function.eval(tree.argument, env)
 			except Exception as e: return Error(tree, repr(e))
-		else: return Error(tree.function, "is not a function.")
+		else: return Error(tree.function, "This is not a function. I can't invoke it with parameters.")
 	elif isinstance(tree, syntax.Abstraction):
 		if isinstance(tree.parameter, syntax.Name):
-			return UDF1(tree, env)
+			return UDF1(tree.parameter.text, tree.body, env)
 		elif isinstance(tree.parameter, dict):
-			return UDF2(tree, env)
+			return UDF2(tree.parameter.keys(), tree.body, env)
 		else:
 			raise RuntimeError("This can't happen.")
 	elif isinstance(tree, syntax.Switch):
@@ -194,20 +267,45 @@ def _eval(tree, env):
 			return _eval(tree.otherwise, env)
 	elif isinstance(tree, syntax.Error):
 		return Error(tree, "Syntax Error")
+	elif isinstance(tree, syntax.FieldAccess):
+		lhs = _eval(tree.exp, env)
+		if isinstance(lhs, Error): return lhs
+		try: item = getattr(lhs, tree.name.text)
+		except AttributeError as ae: return Error(tree, str(ae))
+		if callable(item): item = FFI(item)
+		return item
+	elif isinstance(tree, syntax.ApplyAnaphor):
+		fn = _eval(tree.function, env)
+		if isinstance(fn, Function):
+			return fn.eval_anaphor(tree, env)
+		else:
+			return Error(tree, "This is not a function. I can't invoke it with parameters.")
 	raise RuntimeError("Incomplete Evaluator: ", tree)
 
 ### Here's the part that pre-loads some global functions to play with:
+def FFI(it):
+	try: signature = inspect.signature(it)
+	except ValueError: raise CannotCall(it)
+	if len(signature.parameters) == 1:
+		return PythonUnary(it)
+	elif not signature.parameters:
+		return it()
+	elif all(len(k)==1 for k in signature.parameters.keys()):
+		return PythonMultary(it, signature.parameters.keys())
 
-for name in dir(math):
-	if name.startswith('_'): continue
-	it = getattr(math, name)
-	if callable(it):
-		try: signature = inspect.signature(it)
-		except ValueError: continue
-		if len(signature.parameters) == 1:
-			GLOBAL_SCOPE[name] = PythonUnary(it)
-		elif all(len(k)==1 for k in signature.parameters.keys()):
-			GLOBAL_SCOPE[name] = PythonMultary(it, signature.parameters.keys())
-	else:
-		GLOBAL_SCOPE[name] = it
+def __init__():
+	GLOBAL_SCOPE['help'] = """Bed Spread (version %s), interactive REPL
+    Copyright 2022, by Ian Kjos
+    Documentation is at http://bedspread.readthedocs.io
+    License terms are at https://opensource.org/licenses/MIT
+    Follow progress at https://github.com/kjosib/bedspread
+    This is pre-alpha code. Current goal is first-phase database integration in a flat namespace.
+    ctrl-d or ctrl-z to quit, depending on your operating system
+    enter "help" to see this message again."""%__version__
+	for name in dir(math):
+		if name.startswith('_'): continue
+		it = getattr(math, name)
+		try: GLOBAL_SCOPE[name] = FFI(it) if callable(it) else it
+		except CannotCall: pass
 
+__init__()

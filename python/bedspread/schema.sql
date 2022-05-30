@@ -18,8 +18,9 @@ create table symbol (
 );
 
 insert into symbol (name, kind, parameters, body, comment) values
--- Simple example function
-('quadratic', 'formula', 'a b c', '(-b + sqrt(b^2 - 4*a*c))/(2*a)', 'One root of a quadratic expression.'),
+-- Simple example function(s)
+('quadratic', 'formula', 'a b c', 'cons(head:quad_1(m:1)(@), tail:quad_1(m:-1)(@))', 'Both roots of a quadratic expression.'),
+('quad_1', 'formula', 'a b c m', '(-b + m*sqrt(b^2 - 4*a*c))/(2*a)', 'One root of a quadratic expression.'),
 -- Simple example type
 ('cons', 'record', 'head tail', null, 'The standard elementary unit of list linkage.'),
 -- Simple example template:

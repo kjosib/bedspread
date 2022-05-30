@@ -29,41 +29,56 @@ There's a paper under construction, and when finished it will most likely be put
 
 Note: *UDF* here stands for *User-Defined Function*.
 
-* [x] Decide on host language for initial development (presumably Python)
-* [x] Hack together a typical math-like functional expression grammar with a right-associative selection form.
-* [x] Console-hosted read-parse-display loop
-* [x] Console-hosted read-eval-print loop (REPL) without stored functions, but with intrinsics and lambda forms.
-* [ ] Minimal database schema for UDFs, and a few simple samples.
-* [ ] Adjust REPL to pull UDFs from a database.
-* [ ] Abstract over DB access to isolate the concern.
-* [ ] Add Lazy Evaluation.
-* [ ] Add Strings.
-* [ ] Add Turtle Graphics. This may be cause to do something about monads, or at least add a semicolon.
-* [ ] Minimal graphical shell: a console, a function index with search facility, and a clause editor.
-* [ ] Add algebraic types, first to the schema, then the grammar, then
-* [ ] Do something about monads. This may involve
-* [ ] Add schema and REPL support for access to foreign function interface.
+* [x] Decide on host language for initial development (Python)
+* Langauge Characteristics
+  * [x] Typical math-like functional expression grammar with a right-associative selection form.
+  * Text/string support
+    * [x] Grammar for simple constant strings
+    * [x] Long-strings and templates (done as `symbol`-table entries)
+    * [ ] Proper text-oriented operators and functions
+    * [ ] Regular-expression support
+  * [ ] Streaming/collection/list facility
+  * [x] Product-types (i.e. records) and field access expressions
+  * [ ] Sum-types (i.e. unions) and type-case matching for functions
+  * [ ] Lazy Evaluation
+  * [ ] Something akin to block-scope nesting 
+  * [ ] Type Safety
+  * [ ] Do something about external effects. This may involve monads or a cool process-algebra.
+* Programmer-Interface Features
+  * [x] Console-hosted read-parse-display loop
+  * [x] Console-hosted read-eval-print loop (REPL) without stored functions, but with intrinsics and lambda forms.
+  * [ ] Make the REPL poll for a changed database before evaluating immediate-mode expressions.
+  * [ ] Minimal graphical shell: a console, a function index with search facility, and a clause editor.
+  * [ ] More advanced facilities -- to be determined
+* Code-in-Database Features:
+  * [x] Minimal database schema for UDFs, and a few simple samples.
+  * [x] Adjust REPL to pull UDFs from a database.
+    * [ ] Fix error reporting in UDFs to blame the guilty function, which is more about the evaluator.
+  * [ ] Abstract over DB access to isolate the concern.
+  * [ ] Add schema and REPL support for access to foreign function interface.
+* Interface to the environment (needs support for a process model of some kind)
+  * [ ] Simple console I/O
+  * [ ] File I/O
+    * [ ] Universal Streaming Concept
+    * [ ] Sequential Binary and Text (with codecs)
+    * [ ] Random access
+    * [ ] Record-structuring
+  * [ ] Sophisticated console I/O
+    * [ ] ncurses-style colors and cursor control
+    * [ ] keyboard/mouse/timer event loop
+  * [ ] Turtle Graphics (Perhaps there's a turtle monad?)
+  * [ ] Raster Graphics, which might live within...
+  * [ ] Windowing / GUI Tooling, which could be tkinter on Python or JavaFX on JVM.
+  * [ ] Arcade-Game Facilities
+    * [ ] Sprites / Textures
+    * [ ] 3-D Graphics
+    * [ ] Full-Screen Mode
+    * [ ] Music and Sound Effects
 
 
 ## Documentation:
 
 Documentation is [at readthedocs](https://bedspread.readthedocs.io/en/latest/).
-A first-draft list of headings is:
-
-* Starting with *Bed Spread*: How to open the REPL and play
-* The *Bed Spread* expression grammar
-* Functions you can use, right out of the box
-* Make your own functions
-* Simple Input and Output
-* Data Structures
-* I/O with Files:
-  * Structured
-  * Free-form
-* Turtle Graphics
-* Games
-* Sharing your project
-* Bindings to components written in other languages
-* System Internals
 
 ## Application to Education
 

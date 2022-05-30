@@ -34,7 +34,7 @@ Text and Templates
 -------------------
 You can define a symbol in the database of kind ``text``,
 in which case the ``body`` is treated as constant text to which you may refer by name.
-An pre-loaded example is called ``Gettysbug``.
+An pre-loaded example is called ``Gettysburg``.
 
 Alternatively, for a symbol of kind ``template``, the text in the ``body`` is considered a template:
 placeholders are surrounded with curly braces. See the ``greet`` template for a simple example.

@@ -80,7 +80,7 @@ Full details are given in :doc:`grammar`. The key conceptual differences are:
 About Creating Functions
 -------------------------
 
-Have a look in you current working directory. (On Windows, type ``start .``.)
+Have a look in your current working directory. (On Windows, type ``start .``.)
 If you look carefully, you'll see a file called ``functions.bedspread``.
 This is in fact a very small SQLite database.
 

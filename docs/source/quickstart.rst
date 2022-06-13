@@ -93,7 +93,3 @@ Open it with your favorite SQLite manager and have a look at the contents of the
 You can add your own formulas using a language described in a later section of this manual.
 Also, this is how you'd define custom data types and text blocks.
 
-
-**For the technically minded:**
-*Bed Spread* aims to be a relatively pure functional language with lazy evaluation.
-At this very moment, evaluation is strict/eager, but that will change in time.

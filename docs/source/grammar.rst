@@ -22,10 +22,41 @@ Text
 Simple text strings may be enclosed between double-quotes, ``"like this"``.
 If you need anything more complicated, see the section *Text and Templates* under :doc:`derived`.
 
-Sequences, dictionaries, and the like
-......................................
+Sequences
+...........
+.. note:: This is planned. It does not yet work.
+
+How about something like ``[: 2, 3, 5, 7, 11 :]`` as an array of six numbers?
+Probably it should work with regular parenthesis too,
+and work as a valid single-argument to a function.
+In other words, we should be able to write something like ``sum(: 1, 4, 9, 16 :)``
+and get a valid answer.
+
+As for getting information back out of an array, probably the answer should be an infix operator ``{at}``.
+(In fact, the same operator could also be defined for dictionaries.)
+
+.. note::
+    I concede this is a couple more keystrokes than some other languages,
+    but it fits in with making round and square brackets interchangeable (so long as they remain balanced).
+    And why do we want that interchangeability?
+    Because it's a gentle way to localize syntax goofs.
+
+    Also incidentally, this leaves open several avenues for extension.
+    For example, I've an idea to express recurrence relations using back-reference syntax.
+
+Sets
+.....
 *To be determined.*
 
+Probably end up doing sets as a function that constructs them from sequences.
+
+Matrices / Multidimensional Arrays
+....................................
+*To be determined.*
+
+Dictionaries and the like
+......................................
+*To be determined.*
 
 Names
 ---------
@@ -52,9 +83,6 @@ Exponentiation is ``^`` and right-associative, so ``3^3^3`` is equal to ``3^27``
 Parentheses work like you would expect for grouping. That is, ``3 + 4 * 5`` is 23, but ``(3 + 4) * 5`` is 35.
 For clarity, you may also use square brackets like ``[ 123 + 456 ]`` for grouping.
 The round and square brackets must nest and balance properly.
-
-The keyword ``MOD`` stands for the modulus (i.e. remainder) operation. It has the same precedence and associativity
-as multiplication and division.
 
 Text Operators
 ---------------
@@ -94,15 +122,93 @@ They're also not case-sensitive, so you can use lower-case if you prefer (and I 
 but there is otherwise no precedence relationship between them:
 they work strictly from left to right.
 
+Custom Operators and Adverbs
+-----------------------------
+
+.. note:: This is planned. It does not yet work.
+
+After a bit of play-testing, I find a surprisingly large number of good use-cases for infix-operator syntax.
+This makes an argument to support them. (Pun most definitely intended.)
+Therefore, I have decided on a syntax and semantics for defining and using such contraptions.
+
+.. note::
+    In this context, *infix operator* means something like *plus*, *minus*, or *multiplied-by*:
+    something written in-between two values to express a new value.
+
+Named Operators
+........................
+
+The contents of ``{`` curly braces ``}`` are taken to be a custom operation, possibly modified by adverbs.
+When it's used infix (i.e. between two values) it has the same precedence and associativity as multiplication or division.
+When used prefix (i.e. before a value, either at the beginning of an expression or after some infix operator)
+then it
+(You can always use brackets or parentheses to control this directly.)
+
+A few named infix operations are pre-defined. These listed in the section at :doc:`intrinsic`.
+
+.. admonition:: Implementation Note
+
+    Define infix operators as records in the ``infix`` table.
+    They implicitly have parameters ``a`` and ``b``,
+    standing for the left- and right-hand operands respectively.
+
+Adverbs
+........
+
+Between the ``{`` curly braces, ``}`` you can put more than just an operator name.
+You may in fact prefix an operator with one or more adverbs. In fact,
+you can do this to any infix operator, not just the named ones.
+
+Ok, but what the bleep is an adverb?
+
+Simply put, adverbs modify the meaning of an operation, generally in the context of array (or other collection) types.
+The concept may be thought of as a standardized form for certain kinds of high-order functions.
+By way of example:
+
+* ``{fold +} someArray`` calculates the sum of the values of ``someArray``.
+* ``0 {unfold +} someArray`` produces a running total of those same values.
+* ``0 {pairwise reverse -} someArray`` is the inverse operation to the above,
+  computing the delta from one element to the next (and assuming a zero origin).
+
+The three examples above illustrate a subtlety:
+In each case, the root operation was infix.
+
+For more on this, there's to be a documentation section on predefined things -- eventually.
+
+Incidentally, I may wind up taking more of a page from APL and cause some of the standard adverbs
+to be expressed as punctuation instead.
+
+.. admonition:: Implementation Note
+
+    Define adverbs operators as records in the ``adverb`` table.
+    They implicitly have parameters ``a``, ``b``,
+    standing for the left- and right-hand operands respectively.
+
+Precedence and Associativity
+.............................
+
+When a ``{`` curly brace ``}`` form appears *infix* (i.e. between two values),
+the structure overall has the same precedence and associativity as multiplication or division.
+
+When such a form appears *prefix*, it binds very tightly to the right, similar to unary negation.
+
+Caveats
+.........
+
+Not every combination of adverbs and operations necessarily makes sense.
+Others may make perfect sense but simply be unimplemented (yet).
+
 Selection among Alternatives
 ----------------------------
 
-You can write an expression like ``{ when a > b then c; when d < e then f; else g }``
+You can write an expression like ``( when a > b then c; when d < e then f; else g )``
 and it will mean either ``c``, ``f``, or ``g`` according to the values of the other variables.
 Once again, the keywords ``WHEN``, ``THEN``, and ``ELSE`` are not case-sensitive.
 
-The curly braces specifically mean an alternative selection form is enclosed.
-They are inspired by mathematical notation for a function defined in parts.
+Unless this conditional form is the outermost expression of a formula,
+it must be enclosed directly in either round or square brackets.
+(This eliminates all sorts of potential ambiguities.)
+
 
 Calling Functions
 -------------------

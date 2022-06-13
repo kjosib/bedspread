@@ -17,6 +17,7 @@ Next goal is a graphical shell by July.
    about
    quickstart
    grammar
+   data
    intrinsic
    derived
    simpleIO
@@ -29,6 +30,14 @@ Next goal is a graphical shell by July.
    hacking
 
 You can also visit the `github page <https://github.com/kjosib/bedspread>`_ if you'd like to follow development.
+
+For the technically minded:
+   *Bed Spread* aims to be a relatively pure functional language with both lazy evaluation
+   and strong vector-oriented powers resembling those of APL,
+   but legible to the causal user.
+   There's a tension between these aspects. It will be interesting to see how that resolves.
+   At this very moment, evaluation is strict/eager, but that will change in due time.
+
 
 Indices and tables
 ==================

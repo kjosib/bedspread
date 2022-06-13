@@ -9,7 +9,7 @@ Precedence rules are fairly normal.
 %bogus UMINUS
 %left '(' '.'
 %right '^'
-%left '*' '/' MOD
+%left '*' '/' '{'
 %left '+' '-'
 %left RELOP
 %left NOT
@@ -31,7 +31,7 @@ However, the `@` symbol provides anaphoric abbreviation,
 which should encourage you to use consistent names for parameters.
 
 ```
-start -> exp
+start -> condex
   | $error$ :error
 
 exp -> grouping
@@ -42,10 +42,11 @@ exp -> grouping
   | exp '(' '@' ')'  :apply_anaphor
   | exp '(' $error$ ')' :broken_apply
   |     '-' exp   :unary  %prec UMINUS
+  | '{' custom '}' exp     :custom_prefix  %prec UMINUS
   | exp '^' exp   :binary_operation
+  | exp '{' custom '}' exp :custom_infix
   | exp '*' exp   :binary_operation
   | exp '/' exp   :binary_operation
-  | exp MOD exp   :binary_operation
   | exp '+' exp   :binary_operation
   | exp '-' exp   :binary_operation
   | exp RELOP exp :binary_operation
@@ -69,13 +70,15 @@ binding -> NAME ':' exp :bind_expression
 params -> NAME NAME  :two_params
   | params NAME      :another_param
 
-grouping -> '(' exp ')'   :parenthetical
-  | '[' exp ']' :block 
-  | '{' cases otherwise '}' :switch
+grouping -> '(' condex ')' | '[' condex ']'
+  
+condex -> exp | cases otherwise :switch
 
 cases -> case :first_case | cases case :another_case
 case -> WHEN exp THEN exp ';' :case
 otherwise -> ELSE exp
+
+custom -> NAME | '^' | '*' | '/' | '+' | '-' | 'RELOP' | 'NOT' | 'LOGIC' | NAME custom :adverbial
 
 ```
 

@@ -47,6 +47,7 @@ Note: *UDF* here stands for *User-Defined Function*.
 * Programmer-Interface Features
   * [x] Console-hosted read-parse-display loop
   * [x] Console-hosted read-eval-print loop (REPL) without stored functions, but with intrinsics and lambda forms.
+  * [ ] Error context must be tied to the function source at issue.
   * [ ] Make the REPL poll for a changed database before evaluating immediate-mode expressions.
   * [ ] Minimal graphical shell: a console, a function index with search facility, and a clause editor.
   * [ ] More advanced facilities -- to be determined

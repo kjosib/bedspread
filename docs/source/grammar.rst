@@ -44,6 +44,10 @@ As for getting information back out of an array, probably the answer should be a
     Also incidentally, this leaves open several avenues for extension.
     For example, I've an idea to express recurrence relations using back-reference syntax.
 
+.. note::
+    Long literal sequences should probably be done as some sort of static-data concept.
+    Meanwhile, they can be factored out to separate formula symbols.
+
 Sets
 .....
 *To be determined.*

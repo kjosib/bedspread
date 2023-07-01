@@ -1,7 +1,8 @@
 import sys
 from importlib import resources
 import json
-from boozetools.support import runtime, interfaces
+from boozetools.macroparse import runtime
+from boozetools.scanning.engine import IterableScanner
 from bedspread import syntax
 
 class Parser(runtime.TypicalApplication):
@@ -10,42 +11,44 @@ class Parser(runtime.TypicalApplication):
 		'OR' : syntax.Logical,
 		'XOR' : syntax.Logical,
 		'EQV' : syntax.Logical,
-		'MOD' : syntax.Operator,
 		'NOT' : syntax.Operator,
-		'AS': syntax.Operator,
 		'WHEN': syntax.Operator,
 		'THEN': syntax.Operator,
 		'ELSE': syntax.Operator,
 	}
-	__confusing_token : syntax.Syntax = None
+	
+	# TODO: This bad_token concept is hokey. BT should prefer an injectable on-error object.
+	bad_token : syntax.Syntax = None
+	
 	def __init__(self):
 		super().__init__(json.loads(resources.read_binary("bedspread", "grammar.automaton")))
 	
-	def scan_ignore(self, yy: interfaces.Scanner, what_to_ignore): pass
-	def scan_punctuation(self, yy: interfaces.Scanner): syntax.Operator(yy, sys.intern(yy.matched_text()))
+	def scan_ignore(self, yy: IterableScanner, what_to_ignore): pass
+	def scan_punctuation(self, yy: IterableScanner): syntax.Operator(yy, sys.intern(yy.match()))
 	
-	def scan_real(self, yy: interfaces.Scanner): syntax.Literal(yy, float)
-	def scan_imaginary(self, yy: interfaces.Scanner): syntax.Literal(yy, lambda t :float(t[:-1])*1j)
-	def scan_hexadecimal(self, yy: interfaces.Scanner): syntax.Literal(yy, lambda t :int(yy.matched_text(), 16))
-	def scan_short_string(self, yy: interfaces.Scanner): syntax.Literal(yy, lambda t: yy.matched_text()[1:-1])
+	def scan_real(self, yy: IterableScanner): syntax.Literal(yy, float)
+	def scan_imaginary(self, yy: IterableScanner): syntax.Literal(yy, lambda t :float(t[:-1])*1j)
+	def scan_hexadecimal(self, yy: IterableScanner): syntax.Literal(yy, lambda t :int(yy.match(), 16))
+	def scan_short_string(self, yy: IterableScanner): syntax.Literal(yy, lambda t: yy.match()[1:-1])
 	
 	scan_relop = syntax.RelOp
 	
-	def scan_word(self, yy: interfaces.Scanner):
-		upper = yy.matched_text().upper()
+	def scan_word(self, yy: IterableScanner):
+		upper = yy.match().upper()
 		if upper in self.RESERVED:
 			self.RESERVED[upper](yy, sys.intern(upper))
 		else:
 			syntax.Name(yy)
 			
-	def scan_token(self, yy: interfaces.Scanner, kind):
-		text = yy.matched_text()
+	def scan_token(self, yy: IterableScanner, kind):
+		text = yy.match()
 		yy.token(kind, text)
 	
-	parse_binary_operation = syntax.BinEx
+	parse_infix = syntax.Infix
+	parse_prefix = syntax.Prefix
+	parse_adverbial = syntax.Adverbial
 	parse_case = syntax.Case
 	parse_switch = syntax.Switch
-	parse_unary = syntax.Unary
 	parse_error = syntax.Error
 	parse_apply = syntax.Apply
 	parse_apply_anaphor = syntax.ApplyAnaphor
@@ -54,6 +57,9 @@ class Parser(runtime.TypicalApplication):
 	parse_parenthetical = syntax.Parenthetical
 	parse_block = syntax.Block
 	parse_field_access = syntax.FieldAccess
+	parse_empty = syntax.EmptyList
+	parse_list = syntax.ArrayExpression
+	parse_dict = syntax.DictExpression
 	
 	def parse_abstraction(self, parameter, body):
 		if isinstance(parameter, syntax.Error): return parameter
@@ -94,17 +100,24 @@ class Parser(runtime.TypicalApplication):
 			some[name] = another
 			return some
 	
+	def parse_first(self, item):
+		return [item]
+	
+	def parse_more(self, them, item):
+		them.append(item)
+		return them
+	
 	def unexpected_token(self, symbol, semantic, pds):
-		self.__confusing_token = semantic
+		self.bad_token = semantic
 	
 	def unexpected_eof(self, pds):
-		self.__confusing_token = syntax.Noise(self.yy.current_span())
+		self.bad_token = syntax.Noise(self.yy.slice())
 		
-	def unexpected_character(self, yy: interfaces.Scanner):
-		yy.token("NOISE", syntax.Noise(yy.current_span()))
+	def unexpected_character(self, yy: IterableScanner):
+		yy.token("NOISE", syntax.Noise(yy.slice()))
 		
 	def will_recover(self, proposal):
 		""" return an error token corresponding to the  """
-		left = self.__confusing_token
-		right = proposal[0][1] or syntax.Noise(self.yy.current_span())
+		left = self.bad_token
+		right = proposal[0][1] or syntax.Noise(self.yy.slice())
 		return syntax.Noise(syntax.interval(left, right))

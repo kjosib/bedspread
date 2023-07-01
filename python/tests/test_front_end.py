@@ -19,17 +19,17 @@ class Test_Parser(unittest.TestCase):
 
 	def test_addition(self):
 		tree = self.parse("57 + 23")
-		self.assertIsInstance(tree, syntax.BinEx)
+		self.assertIsInstance(tree, syntax.Infix)
 		self.assertEqual(tree.op.kind, '+')
 		self.assertIsInstance(tree.lhs, syntax.Literal)
 		self.assertIsInstance(tree.rhs, syntax.Literal)
-		self.assertEqual(tree.lhs.span(), (0,2))
-		self.assertEqual(tree.rhs.span(), (5,2))
+		self.assertEqual(tree.lhs.slice(), slice(0,2))
+		self.assertEqual(tree.rhs.slice(), slice(5,7))
 		self.assertEqual(tree.lhs.value, 57)
 		self.assertEqual(tree.rhs.value, 23)
 
 	def test_conditional(self):
-		tree = self.parse("{ when a+b>5 then Fred; when c=7 then Rodgers/Hammerstein; else Daphne }")
+		tree = self.parse("when a+b>5 then Fred; when c=7 then Rodgers/Hammerstein; else Daphne")
 		self.assertIsInstance(tree, syntax.Switch)
 		self.assertEqual(2, len(tree.cases))
 		for case in tree.cases:
@@ -46,7 +46,7 @@ class Test_Parser(unittest.TestCase):
 		):
 			with self.subTest(text):
 				tree = self.parse(text)
-				self.assertIsInstance(tree, syntax.BinEx)
+				self.assertIsInstance(tree, syntax.Infix)
 				self.assertEqual(tree.op.kind, '+') # Do the addition last; it's on the outside.
 				
 	def test_logical_not(self):

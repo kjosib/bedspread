@@ -1,11 +1,13 @@
 import unittest, math
-from bedspread import front_end, evaluator
+from bedspread import front_end, evaluator, iform
 
 parser = front_end.Parser()
+scope = iform.AbstractScope()
 
 def go(text):
 	tree = parser.parse(text)
-	return evaluator.evaluate(tree)
+	plan = scope.convert(tree)
+	return evaluator.eval(plan, scope)
 	
 
 class Test_Evaluator(unittest.TestCase):
@@ -16,7 +18,7 @@ class Test_Evaluator(unittest.TestCase):
 		
 	def test_arithmetic(self):
 		self.assertEqual(25, go("3*3+4*4"))
-		self.assertEqual(2, go("35 mod 3"))
+		self.assertEqual(2, go("35 {mod} 3"))
 		self.assertEqual("abcdef", go('"abc" + "def"'))
 
 	def test_parens(self):
@@ -34,9 +36,9 @@ class Test_Evaluator(unittest.TestCase):
 		self.assertEqual(25, go(text))
 	
 	def test_cond(self):
-		self.assertEqual(14, go(r"{when 1<2 then 14; when 3 > 2 then 42; else 12 }"))
-		self.assertEqual(42, go(r"{when 1>2 then 14; when 3 > 2 then 42; else 12 }"))
-		self.assertEqual(12, go(r"{when 1>2 then 14; when 3 < 2 then 42; else 12 }"))
+		self.assertEqual(14, go(r"when 1<2 then 14; when 3 > 2 then 42; else 12"))
+		self.assertEqual(42, go(r"when 1>2 then 14; when 3 > 2 then 42; else 12"))
+		self.assertEqual(12, go(r"when 1>2 then 14; when 3 < 2 then 42; else 12"))
 		
 	def test_math_is_integrated(self):
 		self.assertEqual(math.tau, go('tau'))

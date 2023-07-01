@@ -13,40 +13,34 @@ What you can then do with that data structure depends on how easy subsequent pas
 from typing import Union
 
 class Syntax:
-	def span(self) -> tuple[int, int]:
+	def slice(self) -> slice:
 		raise NotImplementedError(type(self))
 
-def interval(a,b) -> tuple[int, int]:
-	""" For composing spans. """
-	# This is affected by the odd span format.
-	left = a.span()[0]
-	right = sum(b.span())
-	return left, (right - left)
+def interval(a,b) -> slice:
+	""" For composing slices. """
+	return slice(a.slice().start, b.slice().stop)
 
 class Noise(Syntax):
-	def __init__(self, span):
-		self._span = span
+	def __init__(self, a_slice):
+		self._slice = a_slice
 	
-	def span(self):
-		return self._span
-	
-	def __str__(self):
-		return "<<%s,%s>>"%self._span
+	def slice(self):
+		return self._slice
 
 
 class Operator(Syntax):
-	_span : tuple[int, int]
+	_slice : tuple[int, int]
 	
 	def __init__(self, yy, kind):
-		self._span = yy.current_span()
+		self._slice = yy.slice()
 		self.kind = kind
 		yy.token(kind, self)
 	
-	def span(self):
-		return self._span
+	def slice(self):
+		return self._slice
 	
 	def excerpt(self, text):
-		left, count = self._span
+		left, count = self._slice
 		return text[left:left + count]
 	
 	def __str__(self):
@@ -55,7 +49,7 @@ class Operator(Syntax):
 class Atom(Operator):
 	def __init__(self, yy, kind):
 		super().__init__(yy, kind)
-		self.text = yy.matched_text()
+		self.text = yy.match()
 	def __str__(self):
 		return self.text
 
@@ -80,7 +74,6 @@ class RelOp(Operator):
 	}
 	def __init__(self, yy, relation):
 		super().__init__(yy, "RELOP")
-		self.text = self.CANONICAL[relation]
 		self.relation = relation
 	def __str__(self):
 		return self.CANONICAL[self.relation]
@@ -99,29 +92,31 @@ class Error(Expression):
 	def __init__(self, *args):
 		self.args = args
 		
-	def span(self) -> tuple[int, int]:
+	def slice(self) -> slice:
 		return interval(self.args[0], self.args[-1])
 	
 	def __str__(self):
 		return "<<ERROR {%s}>>"%(str(self.args[0]))
 
-class Unary(Expression):
+class Prefix(Expression):
 	def __init__(self, op:Operator, exp:Expression):
 		self.op = op
 		self.exp = exp
-	def span(self) -> tuple[int, int]:
+		
+	def slice(self) -> slice:
 		return interval(self.op, self.exp)
 
 	def __str__(self):
-		return "%s %s" % (self.op, self.exp)
+		pattern = "{%s} %s" if isinstance(self.op, (Name, Adverbial)) else "%s %s"
+		return pattern % (self.op, self.exp)
 
-class BinEx(Expression):
+class Infix(Expression):
 	def __init__(self, lhs:Expression, op:Operator, rhs:Expression):
 		self.lhs = lhs
 		self.op = op
 		self.rhs = rhs
 	
-	def span(self) -> tuple[int, int]:
+	def slice(self) -> slice:
 		return interval(self.lhs, self.rhs)
 	
 	def __str__(self):
@@ -135,7 +130,7 @@ class Case(Expression):
 	def __str__(self):
 		return "WHEN %s THEN %s; "%(self.predicate, self.consequence)
 	
-	def span(self) -> tuple[int, int]:
+	def slice(self) -> slice:
 		return interval(self.predicate, self.consequence)
 		
 class Switch(Expression):
@@ -159,9 +154,9 @@ class Apply(Expression):
 			arg = str(self.argument)
 		return str(self.function)+"( " + arg + " )"
 	
-	def span(self) -> tuple[int, int]:
+	def slice(self) -> slice:
 		if isinstance(self.argument, dict):
-			return self.function.span()
+			return self.function.slice()
 		else:
 			return interval(self.function, self.argument)
 	
@@ -172,8 +167,8 @@ class ApplyAnaphor(Expression):
 	def __str__(self):
 		return str(self.function)+'(@)'
 	
-	def span(self) -> tuple[int, int]:
-		return self.function.span()
+	def slice(self) -> slice:
+		return self.function.slice()
 
 class Abstraction(Expression):
 	# Just a _syntax_ node.
@@ -192,7 +187,7 @@ class BindExpression(Syntax):
 		self.argument = argument
 	def __str__(self):
 		return str(self.name)+": "+str(self.argument)
-	def span(self) -> tuple[int, int]:
+	def slice(self) -> slice:
 		return interval(self.name, self.argument)
 
 class BindAnaphor(Syntax):
@@ -208,8 +203,8 @@ class Parenthetical(Expression):
 	def __str__(self):
 		return "("+str(self.exp)+")"
 	
-	def span(self) -> tuple[int, int]:
-		return self.exp.span()
+	def slice(self) -> slice:
+		return self.exp.slice()
 
 class Block(Expression):
 	def __init__(self, exp:Expression):
@@ -218,8 +213,8 @@ class Block(Expression):
 	def __str__(self):
 		return "[" + str(self.exp) + "]"
 
-	def span(self) -> tuple[int, int]:
-		return self.exp.span()
+	def slice(self) -> slice:
+		return self.exp.slice()
 
 class FieldAccess(Expression):
 	def __init__(self, exp:Expression, name:Name):
@@ -229,6 +224,31 @@ class FieldAccess(Expression):
 	def __str__(self):
 		return str(self.exp)+"."+str(self.name)
 	
-	def span(self) -> tuple[int, int]:
+	def slice(self) -> slice:
 		return interval(self.exp, self.name)
 	
+class Adverbial(Expression):
+	def __init__(self, adverb:Name, op:Operator):
+		self.adverb = adverb
+		self.op = op
+		
+	def slice(self) -> slice:
+		return interval(self.adverb, self.op)
+
+	def __str__(self):
+		return "%s %s" % (self.adverb, self.op)
+
+
+class EmptyList(Expression):
+	def __init__(self):
+		pass
+
+
+class ArrayExpression(Expression):
+	def __init__(self, exp_list:list[Expression]):
+		self.exp_list = exp_list
+		
+class DictExpression(Expression):
+	def __init__(self, pair_list:list["Pair"]):
+		self.pair_list = pair_list
+		

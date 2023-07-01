@@ -10,15 +10,15 @@ create table kind (
 insert into kind (kind) values ('formula'), ('record'), ('union'), ('text'), ('template');
 
 create table symbol (
-	name text not null PRIMARY KEY,
+    symbol_id integer primary key,
+	scope integer null,
+	name text not null,
 	kind text not null references kind(kind),
-	parameters text null,
-	body text null,
-	comment text
+	unique (scope, name)
 );
 
 create table typecase ( -- for functions and processes
-    symbol text not null references symbol(name),
+    symbol_id integer not null references symbol(symbol_id),
     ordinal int not null,
     typecase text not null,
     guard text null,
@@ -28,17 +28,15 @@ create table typecase ( -- for functions and processes
 );
 
 create table constructor ( -- for union-types
-    symbol text not null references symbol(name),
+    symbol_id integer not null references symbol(symbol_id),
     tag text not null,
 	parameters text null,
 	comment text,
 	primary key (symbol, tag)
 );
 
+/*
 insert into symbol (name, kind, parameters, body, comment) values
--- Simple example function(s)
-('quadratic', 'formula', 'a b c', 'pair(hi:quad_1(m:1)(@), lo:quad_1(m:-1)(@))', 'Both roots of a quadratic expression.'),
-('quad_1', 'formula', 'a b c m', '(-b + m*sqrt(b^2 - 4*a*c))/(2*a)', 'One root of a quadratic expression.'),
 -- Sample record type
 ('pair', 'record', 'hi lo', null, 'A simple sample product type.'),
 -- Example list:
@@ -48,17 +46,6 @@ insert into symbol (name, kind, parameters, body, comment) values
 ('fold', 'formula', 'fn xs a', 'empty', 'Standard list fold/reduce.')
 ('take', 'formula', 'n xs', 'empty', 'Standard "take" function.')
 ('filter', 'formula', 'predicate xs', 'empty', 'Standard "filter" function.')
--- Simple example template:
-('greet', 'template', null, 'Hello, {who}! Nice to meet you.', 'Sample template.'),
--- Sample long-text, much more than you'd want taking up space in a formula:
-('Gettysburg', 'text', null, 'Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal.
-
-Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battle-field of that war. We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live. It is altogether fitting and proper that we should do this.
-
-But, in a larger sense, we can not dedicate -- we can not consecrate -- we can not hallow -- this ground. The brave men, living and dead, who struggled here, have consecrated it, far above our poor power to add or detract. The world will little note, nor long remember what we say here, but it can never forget what they did here. It is for us the living, rather, to be dedicated here to the unfinished work which they who fought here have thus far so nobly advanced. It is rather for us to be here dedicated to the great task remaining before us -- that from these honored dead we take increased devotion to that cause for which they gave the last full measure of devotion -- that we here highly resolve that these dead shall not have died in vain -- that this nation, under God, shall have a new birth of freedom -- and that government of the people, by the people, for the people, shall not perish from the earth.
-
-Abraham Lincoln
-November 19, 1863', 'Bliss copy. See https://www.abrahamlincolnonline.org/lincoln/speeches/gettysburg.htm for background.');
 
 insert into constructor(symbol, tag, parameters, comment) values
 ('list', 'cons', 'head tail', 'Elementary unit of list linkage'),
@@ -70,4 +57,4 @@ insert into typecase (symbol, ordinal, typecase, guard, body, comment) values
 ('take', 1, 'xs:cons', 'n>0', 'cons(head:xs.head, tail:take(xs:xs.tail, n:n-1))', 'recursive case'),
 ('filter', 1, 'xs:cons', 'predicate(xs.head)', 'cons(head:xs.head, tail:filter(xs:xs.tail, @predicate))', 'keep-case'),
 ('filter', 2, 'xs:cons', null, 'filter(xs:xs.tail, @predicate)', 'drop-case');
-
+*/

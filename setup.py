@@ -14,7 +14,7 @@ def _refresh_grammar():
 	if os.path.exists(src):
 		if (not os.path.exists(dst)) or (os.stat(dst).st_mtime < os.stat(src).st_mtime):
 			from boozetools.macroparse.compiler import compile_file
-			tables = compile_file(src, method='LR1')
+			tables = compile_file(src)
 			with open(dst, 'w') as ofh:
 				json.dump(tables, ofh, separators=(',', ':'), sort_keys=True)
 	else:
@@ -51,6 +51,6 @@ setuptools.setup(
     ],
 	python_requires='>=3.7',
 	install_requires=[
-		'booze-tools>=0.5.2',
+		'booze-tools>=0.6.0',
 	]
 )

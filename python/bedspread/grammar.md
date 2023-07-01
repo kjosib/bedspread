@@ -1,7 +1,5 @@
 # Grammar for Bed Spread
 
-This is not at all finished...
-It started as a copy of the calculator example from booze-tools.
 
 ## Precedence
 Precedence rules are fairly normal.
@@ -14,11 +12,9 @@ Precedence rules are fairly normal.
 %left RELOP
 %left NOT
 %left LOGIC
-```
 
-The so-called "void" symbols are but syntactic particles devoid of independent semantic value.
-```
-%void '(' ')' '[' ']' '{' '}' ',' '\' ':' ';' '@' '.' WHEN THEN ELSE
+%void WHEN THEN ELSE
+%void_set punct
 ```
 
 
@@ -34,6 +30,8 @@ which should encourage you to use consistent names for parameters.
 start -> condex
   | $error$ :error
 
+condex -> exp | cases otherwise :switch | sequence
+
 exp -> grouping
   | LITERAL
   | NAME
@@ -41,24 +39,24 @@ exp -> grouping
   | exp '(' argument ')'  :apply
   | exp '(' '@' ')'  :apply_anaphor
   | exp '(' $error$ ')' :broken_apply
-  |     '-' exp   :unary  %prec UMINUS
-  | '{' custom '}' exp     :custom_prefix  %prec UMINUS
-  | exp '^' exp   :binary_operation
-  | exp '{' custom '}' exp :custom_infix
-  | exp '*' exp   :binary_operation
-  | exp '/' exp   :binary_operation
-  | exp '+' exp   :binary_operation
-  | exp '-' exp   :binary_operation
-  | exp RELOP exp :binary_operation
-  |       NOT exp :unary
-  | exp LOGIC exp :binary_operation
+  |     '-' exp   :prefix  %prec UMINUS
+  | '{' custom '}' exp     :prefix  %prec UMINUS
+  | exp '^' exp   :infix
+  | exp '{' custom '}' exp :infix
+  | exp '*' exp   :infix
+  | exp '/' exp   :infix
+  | exp '+' exp   :infix
+  | exp '-' exp   :infix
+  | exp RELOP exp :infix
+  |       NOT exp :prefix
+  | exp LOGIC exp :infix
   | '\' parameter grouping    :abstraction
   | '\' $error$ grouping :error
   | '(' $error$ ')' :error
   | '[' $error$ ']' :error
   | '{' $error$ '}' :error
   
-argument -> exp | kwargs | kwargs ','
+argument -> exp | kwargs | kwargs ',' | sequence
 parameter -> NAME | params
 
 kwargs -> binding       :first_binding
@@ -72,13 +70,18 @@ params -> NAME NAME  :two_params
 
 grouping -> '(' condex ')' | '[' condex ']'
   
-condex -> exp | cases otherwise :switch
-
 cases -> case :first_case | cases case :another_case
 case -> WHEN exp THEN exp ';' :case
 otherwise -> ELSE exp
 
-custom -> NAME | '^' | '*' | '/' | '+' | '-' | 'RELOP' | 'NOT' | 'LOGIC' | NAME custom :adverbial
+custom -> NAME | '^' | '*' | '/' | '+' | '-' | RELOP | LOGIC | NAME custom :adverbial
+
+sequence ->  ':' items ':'
+items -> :empty | ctl(exp) :list | ctl(pair) :dict
+pair -> exp '->' exp
+
+ctl(x) -> csl(x) | csl(x) ','
+csl(x) -> x :first | csl(x) ',' x :more
 
 ```
 
@@ -117,5 +120,6 @@ Nothing fancy here, but the observant will note that complex numbers are support
 <>|!=    :relop NE
 >=       :relop GE
 >        :relop GT
+->    |
 {punct}            :punctuation
 ```

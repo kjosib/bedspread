@@ -27,22 +27,22 @@ from typing import NamedTuple, Any
 import abc
 import inspect
 
+class Environment(abc.ABC):
+	@abc.abstractmethod
+	def resolve(self, name:str) -> Any:
+		pass
+
 class Expr(abc.ABC):
 	@abc.abstractmethod
-	def evaluate(self, env:"Environment") -> Any:
+	def evaluate(self, env:Environment) -> Any:
 		pass
 
 class Procedure(abc.ABC):
 	""" A special kind of value which can be applied. """
 	
 	@abc.abstractmethod
-	def apply(self, env:"Environment", args:list[Expr]) -> Any:
+	def apply(self, env:Environment, args:list[Expr]) -> Any:
 		""" Application is to expressions, thus supporting call-by-whatever. """
-
-class Environment(abc.ABC):
-	@abc.abstractmethod
-	def resolve(self, name:str) -> Any:
-		pass
 
 ABSENT = object()
 class Thunk:
